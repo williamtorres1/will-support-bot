@@ -1,12 +1,42 @@
-import express from 'express';
-import User from '@models/User';
+import { client as Client } from 'tmi.js';
 
-const app = express();
+const botName = 'night-bot';
+const botChannel = 'supernightstorm';
+const botToken = 'oauth:';
 
-app.get('/', (request, response) => {
-  return response.json({ message: 'Hello World' });
-});
+const options = {
+  identity: {
+    username: botName,
+    password: botToken,
+  },
+  channels: [botChannel],
+};
 
-app.listen(3333, () => {
-  console.log(`Backend started on port 3333!`);
-});
+const commands = ['!help', '!ban', '!hello', '!elo'];
+
+const client = new Client(options);
+
+function messageArrived(alvo, contexto, message, ehBot) {
+  if (ehBot) {
+    return; // se for mensagens do nosso bot ele não faz nada
+  }
+
+  const commandName = message.trim(); // remove espaço em branco da mensagem para verificar o comando
+  // checando o nosso comando
+
+  commands.map(command => {
+    if (command === commandName) {
+      client.say(alvo, `* Você pediu para executar o comando ${commandName}`);
+    }
+  });
+}
+
+function entrouNoChatDaTwitch(adress: string, port: string | number) {
+  console.log(`* Bot entrou no endereço ${adress}:${port}`);
+}
+
+// Registra nossas funções
+client.on('message', messageArrived);
+client.on('connected', entrouNoChatDaTwitch);
+// Connecta na Twitch:
+client.connect();
