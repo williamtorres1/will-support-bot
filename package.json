@@ -2,18 +2,20 @@
   "name": "super-night-bot",
   "version": "1.0.0",
   "description": "A chat bot for my twitch stream",
-  "main": "src/bot.ts",
+  "main": "src/server.ts",
   "repository": "git@github.com:williamtorres1/super-night-bot.git",
-  "author": "William Torres <williamtorres074@gmail.com>",
+  "author": "William Torres <contatowilliamtorres@gmail.com>",
   "license": "MIT",
   "private": false,
   "scripts": {
     "build": "babel src --extensions \".js,.ts\" --out-dir dist --copy-files --no-copy-ignored",
-    "start": "node dist/bot.js",
-    "dev:server": "ts-node-dev -r tsconfig-paths/register --respawn --inspect --transpile-only --ignore-watch node_modules src/bot.ts",
+    "start": "node dist/server.js",
+    "dev:server": "ts-node-dev -r tsconfig-paths/register --respawn --inspect --transpile-only --ignore-watch node_modules src/server.ts",
     "test": "jest"
   },
   "dependencies": {
+    "axios": "^0.21.0",
+    "date-fns": "^2.16.1",
     "dotenv": "^8.2.0",
     "tmi.js": "^1.5.0"
   },

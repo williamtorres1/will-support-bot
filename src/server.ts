@@ -1,8 +1,15 @@
-import { client as Client } from 'tmi.js';
+import dotenv from 'dotenv';
 
-const botName = 'night-bot';
-const botChannel = 'supernightstorm';
-const botToken = 'oauth:';
+import { client as Client } from 'tmi.js';
+import { formatISO, parseISO } from 'date-fns';
+
+import api from './services/api';
+
+dotenv.config();
+
+const botName = process.env.BOT_USERNAME;
+const botChannel = process.env.CHANNEL_NAME;
+const botToken = process.env.OAUTH;
 
 const options = {
   identity: {
@@ -12,12 +19,12 @@ const options = {
   channels: [botChannel],
 };
 
-const commands = ['!help', '!ban', '!hello', '!elo'];
+const commands = ['!help', '!ban', '!hello', '!elo', '!uptime'];
 
 const client = new Client(options);
 
-function messageArrived(alvo, contexto, message, ehBot) {
-  if (ehBot) {
+function messageArrived(target, context, message, isBot) {
+  if (isBot) {
     return; // se for mensagens do nosso bot ele não faz nada
   }
 
@@ -25,18 +32,29 @@ function messageArrived(alvo, contexto, message, ehBot) {
   // checando o nosso comando
 
   commands.map(command => {
-    if (command === commandName) {
-      client.say(alvo, `* Você pediu para executar o comando ${commandName}`);
+    // if (command === commandName) {
+    //   client.say(target, `* Você pediu para executar o comando ${commandName}`);
+    // }
+    if (commandName === '!uptime') {
+      api
+        .get('?user_login=supernightstorm')
+        .then(response => {
+          const { started_at } = response.data.data[0];
+          const dateNowFormated = formatISO(Date.now());
+          const parsedDateStartedAt = formatISO(started_at);
+          console.log(dateNowFormated, parsedDateStartedAt);
+        })
+        .catch(err => console.log(err));
     }
   });
 }
 
-function entrouNoChatDaTwitch(adress: string, port: string | number) {
-  console.log(`* Bot entrou no endereço ${adress}:${port}`);
+function getInOnTwitch(adress: string, port: string | number) {
+  console.log(`>> ${botName} está online em ${adress}:${port}`);
 }
 
 // Registra nossas funções
 client.on('message', messageArrived);
-client.on('connected', entrouNoChatDaTwitch);
+client.on('connected', getInOnTwitch);
 // Connecta na Twitch:
 client.connect();
