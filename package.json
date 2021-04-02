@@ -1,9 +1,9 @@
 {
-  "name": "super-night-bot",
+  "name": "will-support-bot",
   "version": "1.0.0",
   "description": "A chat bot for my twitch stream",
   "main": "src/server.ts",
-  "repository": "git@github.com:williamtorres1/super-night-bot.git",
+  "repository": "git@github.com:williamtorres1/will-support-bot.git",
   "author": "William Torres <contatowilliamtorres@gmail.com>",
   "license": "MIT",
   "private": false,
