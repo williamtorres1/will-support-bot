@@ -48,11 +48,9 @@ async function getInfoByNick(target: string): Promise<[string] | void> {
     const { data: user } = await riotApi.get(
       `summoner/v4/summoners/by-name/${process.env.LOL_NICKNAME}`,
     );
-    console.log(`>> ${user} fetched from riot api.`);
     const { data: rankedLeagues } = await riotApi.get(
       `league/v4/entries/by-summoner/${user.id}`,
     );
-    console.log(`>> ${rankedLeagues} data from riot rankeds api. `);
     if (rankedLeagues.length === 0) {
       return client.say(target, 'Não terminou as MD10 ainda BibleThump');
     }
