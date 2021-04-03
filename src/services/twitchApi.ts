@@ -2,12 +2,12 @@ import dotenv from 'dotenv';
 import axios from 'axios';
 
 dotenv.config();
-const api = axios.create({
+const twitchApi = axios.create({
   baseURL: 'https://api.twitch.tv/helix/streams',
   headers: {
+    'client-id': process.env.BOT_CLIENT_ID,
     Authorization: `Bearer ${process.env.BOT_ACCESS_TOKEN}`,
-    'client-id': 'bdv4rambwdxapho3z5bopaadzflhsf',
   },
 });
 
-export default api;
+export default twitchApi;
