@@ -44,13 +44,15 @@ const client = new Client(options);
 
 async function getInfoByNick(target: string): Promise<[string] | void> {
   try {
+    console.log('>> Fetching data on riot api');
     const { data: user } = await riotApi.get(
       `summoner/v4/summoners/by-name/${process.env.LOL_NICKNAME}`,
     );
-
+    console.log(`>> ${user} fetched from riot api.`);
     const { data: rankedLeagues } = await riotApi.get(
       `league/v4/entries/by-summoner/${user.id}`,
     );
+    console.log(`>> ${rankedLeagues} data from riot rankeds api. `);
     if (rankedLeagues.length === 0) {
       return client.say(target, 'Não terminou as MD10 ainda BibleThump');
     }
@@ -88,7 +90,6 @@ function messageArrived(
 
   console.log(`>> message: ${commandName}`);
   commands.map(command => {
-    console.log(`>> Executing map function`);
     if (command === commandName) {
       if (command === '!uptime') {
         twitchApi
@@ -118,7 +119,7 @@ function messageArrived(
             );
           })
           .catch(err => {
-            return console.log(err.message);
+            return console.error(err);
           });
       }
       if (command === '!github') {
