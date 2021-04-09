@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+import 'dotenv/config';
 
 import { ChatUserstate, client as Client } from 'tmi.js';
 import {
@@ -7,24 +7,15 @@ import {
   differenceInHours,
   differenceInMinutes,
   differenceInSeconds,
+  differenceInYears,
+  differenceInMonths,
+  differenceInDays,
 } from 'date-fns';
 
 import twitchApi from './services/twitchApi';
 import riotApi from './services/riotApi';
 
-dotenv.config();
-
-const botName = process.env.BOT_USERNAME;
-const botChannel = process.env.TARGET_CHANNEL_NAME;
-const botToken = process.env.BOT_OAUTH;
-
-const options = {
-  identity: {
-    username: botName,
-    password: botToken,
-  },
-  channels: [botChannel],
-};
+import BotOptions from './config/bot';
 
 const commands = [
   '!elo',
@@ -36,11 +27,43 @@ const commands = [
   '!configs',
   '!config',
   '!pc',
-  // '!delay',
-  // '!followage',
+  '!followage',
 ];
 
-const client = new Client(options);
+const bot = new Client(BotOptions);
+
+interface RankedLeagues {
+  leagueId: string;
+  queueType: 'RANKED_FLEX_SR' | 'RANKED_SOLO_5X5';
+  tier:
+    | 'IRON'
+    | 'BRONZE'
+    | 'SILVER'
+    | 'GOLD'
+    | 'PLATINUM'
+    | 'DIAMOND'
+    | 'MASTER'
+    | 'GRANDMASTER'
+    | 'CHALLENGER';
+  rank: 'I' | 'II' | 'III' | 'IV';
+  leaguePoints: number;
+  wins: number;
+  loses: number;
+  veteran: boolean;
+  inactive: boolean;
+  freshBlood: boolean;
+  hotStreak: boolean;
+}
+
+interface responseDateFollowAge {
+  from_id: string;
+  from_login: string;
+  from_name: string;
+  to_id: string;
+  to_login: string;
+  to_name: string;
+  followed_at: string;
+}
 
 async function getInfoByNick(target: string): Promise<[string] | void> {
   try {
@@ -52,11 +75,11 @@ async function getInfoByNick(target: string): Promise<[string] | void> {
       `league/v4/entries/by-summoner/${user.id}`,
     );
     if (rankedLeagues.length === 0) {
-      return client.say(target, 'Não terminou as MD10 ainda BibleThump');
+      return bot.say(target, 'Não terminou as MD10 ainda BibleThump');
     }
     let eloFlex = '';
     let eloSolo = '';
-    rankedLeagues.forEach(rankedLeague => {
+    rankedLeagues.forEach((rankedLeague: RankedLeagues) => {
       if (rankedLeague.queueType === 'RANKED_FLEX_SR') {
         eloFlex = `${rankedLeague.tier} ${rankedLeague.rank} (${rankedLeague.leaguePoints} PDL)`;
         return eloFlex;
@@ -65,7 +88,7 @@ async function getInfoByNick(target: string): Promise<[string] | void> {
       eloSolo = `${rankedLeague.tier} ${rankedLeague.rank} (${rankedLeague.leaguePoints} PDL)`;
       return eloSolo;
     });
-    return client.say(
+    return bot.say(
       target,
       `──────────────────────────────── Solo/Duo ...... ${eloSolo} ───────────────────────────────────────── Flex ...... ${eloFlex}`,
     );
@@ -78,23 +101,48 @@ function messageArrived(
   target: string,
   context: ChatUserstate,
   message: string,
-  isBot: boolean,
+  me: boolean,
 ) {
-  if (isBot) {
-    return; // se for mensagens do nosso bot ele não faz nada
+  if (me) {
+    return;
   }
-  const commandName = message.trim(); // remove espaço em branco da mensagem para verificar o comando
-  // checando o nosso comando
-
-  console.log(`>> message: ${commandName}`);
+  const commandName = message.trim();
   commands.map(command => {
     if (command === commandName) {
+      if (command === '!followage') {
+        const user_id = context['user-id'];
+        const { 'room-id': from_id } = context;
+        twitchApi
+          .get(`/users/follows?from_id=${from_id}&to_id=${user_id}`)
+          .then(response => {
+            const { followed_at, from_name, to_name } = response.data
+              .data[0] as responseDateFollowAge;
+            if (!followed_at) return;
+            const followed_atParsed = parseISO(followed_at);
+            const dateNowFormated = parseISO(formatISO(Date.now()));
+
+            const years = differenceInYears(dateNowFormated, followed_atParsed);
+
+            const months =
+              differenceInMonths(dateNowFormated, followed_atParsed) -
+              years * 12;
+
+            const days =
+              differenceInDays(dateNowFormated, followed_atParsed) -
+              months * 30;
+            bot.say(
+              target,
+              `@${to_name} Você segue @${from_name} há ${years} anos, ${months} meses e ${days} dias`,
+            );
+          })
+          .catch(err => console.error(err));
+      }
       if (command === '!uptime') {
         twitchApi
-          .get(`?user_login=${botChannel}`)
+          .get(`/streams?user_login=${process.env.TARGET_CHANNEL_NAME}`)
           .then(response => {
             if (response.data.data.length === 0) {
-              return client.say(target, `O/a streamer está offline`);
+              return bot.say(target, `O/a streamer está offline`);
             }
             const { started_at } = response.data.data[0];
             const dateNowFormated = parseISO(formatISO(Date.now()));
@@ -111,9 +159,9 @@ function messageArrived(
               hours * 3600 -
               minutes * 60;
 
-            return client.say(
+            return bot.say(
               target,
-              `@${botChannel} está online há ${hours}h ${minutes}min ${seconds}s`,
+              `@${process.env.TARGET_CHANNEL_NAME} está online há ${hours}h ${minutes}min ${seconds}s`,
             );
           })
           .catch(err => {
@@ -121,22 +169,22 @@ function messageArrived(
           });
       }
       if (command === '!github') {
-        return client.say(
+        return bot.say(
           target,
           'Me segue no GitHub pra ver muitos códigos fodas e talvez umas gambiarras github.com/williamtorres1',
         );
       }
       if (command === '!vod') {
-        return client.say(
+        return bot.say(
           target,
           'O vod vai ficar disponível por 14 dias assim que a live terminar.',
         );
       }
       if (command === '!idade') {
-        return client.say(target, 'Tenho 19 anos ainda SeemsGood');
+        return bot.say(target, 'Tenho 19 anos ainda SeemsGood');
       }
       if (command === '!comandos') {
-        return client.say(
+        return bot.say(
           target,
           'Os comandos disponíveis são: !elo, !uptime, !github, !idade, !vod, !comandos, !configs',
         );
@@ -146,13 +194,13 @@ function messageArrived(
         command === '!pc' ||
         command === '!config'
       ) {
-        return client.say(
+        return bot.say(
           target,
           `As configs estão no sobre do meu perfil ou no link: twitch.tv/iwillsuportu/about`,
         );
       }
       if (command === '!delay') {
-        return client.say(target, 'Sem delay Kreygasm');
+        return bot.say(target, 'Sem delay Kreygasm');
       }
       if (command === '!elo') {
         return getInfoByNick(target);
@@ -162,12 +210,14 @@ function messageArrived(
 }
 
 function getInOnTwitch(address: string, port: string | number) {
-  client.say(process.env.TARGET_CHANNEL_NAME, 'Entrei KappaPride');
-  return console.log(`>> ${botName} está online em ${address}:${port}`);
+  bot.say(process.env.TARGET_CHANNEL_NAME, 'Entrei KappaPride');
+  return console.log(
+    `>> ${process.env.TARGET_CHANNEL_NAME} está online em ${address}:${port}`,
+  );
 }
 
 // Registra nossas funções
-client.on('message', messageArrived);
-client.on('connected', getInOnTwitch);
+bot.on('message', messageArrived);
+bot.on('connected', getInOnTwitch);
 // Conecta na Twitch:
-client.connect();
+bot.connect();

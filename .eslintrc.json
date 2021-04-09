@@ -32,7 +32,8 @@
       }
     ],
     "prettier/prettier": "error",
-    "no-console":"off"
+    "no-console":"off",
+    "camelcase": "off"
   },
   "settings": {
     "import/resolver": {
