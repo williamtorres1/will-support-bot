@@ -12,6 +12,7 @@ import {
   differenceInDays,
 } from 'date-fns';
 
+import { AxiosResponse } from 'axios';
 import twitchApi from './services/twitchApi';
 import riotApi from './services/riotApi';
 
@@ -75,7 +76,7 @@ async function getInfoByNick(target: string): Promise<[string] | void> {
       `league/v4/entries/by-summoner/${user.id}`,
     );
     if (rankedLeagues.length === 0) {
-      return bot.say(target, 'Não terminou as MD10 ainda BibleThump');
+      bot.say(target, 'Não terminou as MD10 ainda BibleThump');
     }
     let eloFlex = '';
     let eloSolo = '';
@@ -93,7 +94,7 @@ async function getInfoByNick(target: string): Promise<[string] | void> {
       `──────────────────────────────── Solo/Duo ...... ${eloSolo} ───────────────────────────────────────── Flex ...... ${eloFlex}`,
     );
   } catch (err) {
-    return console.error(err);
+    return console.error({ error: err.message });
   }
 }
 
@@ -107,34 +108,38 @@ function messageArrived(
     return;
   }
   const commandName = message.trim();
-  commands.map(command => {
+  commands.forEach(command => {
     if (command === commandName) {
       if (command === '!followage') {
-        const user_id = context['user-id'];
-        const { 'room-id': from_id } = context;
+        const { 'room-id': to_id, 'user-id': user_id } = context;
         twitchApi
-          .get(`/users/follows?from_id=${from_id}&to_id=${user_id}`)
-          .then(response => {
-            const { followed_at, from_name, to_name } = response.data
-              .data[0] as responseDateFollowAge;
-            if (!followed_at) return;
-            const followed_atParsed = parseISO(followed_at);
-            const dateNowFormated = parseISO(formatISO(Date.now()));
+          .get(`/users/follows?from_id=${user_id}&to_id=${to_id}`)
+          .then(
+            (response): AxiosResponse<Promise<[string] | void>> => {
+              const { followed_at, from_name, to_name } = response.data
+                .data[0] as responseDateFollowAge;
+              if (!followed_at) return;
+              const followed_atParsed = parseISO(followed_at);
+              const dateNowFormated = parseISO(formatISO(Date.now()));
 
-            const years = differenceInYears(dateNowFormated, followed_atParsed);
+              const years = differenceInYears(
+                dateNowFormated,
+                followed_atParsed,
+              );
 
-            const months =
-              differenceInMonths(dateNowFormated, followed_atParsed) -
-              years * 12;
+              const months =
+                differenceInMonths(dateNowFormated, followed_atParsed) -
+                years * 12;
 
-            const days =
-              differenceInDays(dateNowFormated, followed_atParsed) -
-              months * 30;
-            bot.say(
-              target,
-              `@${to_name} Você segue @${from_name} há ${years} anos, ${months} meses e ${days} dias`,
-            );
-          })
+              const days =
+                differenceInDays(dateNowFormated, followed_atParsed) -
+                months * 30;
+              bot.say(
+                target,
+                `@${from_name} Você segue @${to_name} há ${years} anos, ${months} meses e ${days} dias`,
+              );
+            },
+          )
           .catch(err => console.error(err));
       }
       if (command === '!uptime') {
@@ -142,7 +147,7 @@ function messageArrived(
           .get(`/streams?user_login=${process.env.TARGET_CHANNEL_NAME}`)
           .then(response => {
             if (response.data.data.length === 0) {
-              return bot.say(target, `O/a streamer está offline`);
+              bot.say(target, `O/a streamer está offline`);
             }
             const { started_at } = response.data.data[0];
             const dateNowFormated = parseISO(formatISO(Date.now()));
@@ -159,34 +164,34 @@ function messageArrived(
               hours * 3600 -
               minutes * 60;
 
-            return bot.say(
+            bot.say(
               target,
               `@${process.env.TARGET_CHANNEL_NAME} está online há ${hours}h ${minutes}min ${seconds}s`,
             );
           })
           .catch(err => {
-            return console.error(err);
+            console.error(err);
           });
       }
       if (command === '!github') {
-        return bot.say(
+        bot.say(
           target,
           'Me segue no GitHub pra ver muitos códigos fodas e talvez umas gambiarras github.com/williamtorres1',
         );
       }
       if (command === '!vod') {
-        return bot.say(
+        bot.say(
           target,
           'O vod vai ficar disponível por 14 dias assim que a live terminar.',
         );
       }
       if (command === '!idade') {
-        return bot.say(target, 'Tenho 19 anos ainda SeemsGood');
+        bot.say(target, 'Tenho 19 anos ainda SeemsGood');
       }
       if (command === '!comandos') {
-        return bot.say(
+        bot.say(
           target,
-          'Os comandos disponíveis são: !elo, !uptime, !github, !idade, !vod, !comandos, !configs',
+          'Os comandos disponíveis são: !elo, !uptime, !github, !idade, !vod, !comandos, !configs, !followage',
         );
       }
       if (
@@ -194,16 +199,16 @@ function messageArrived(
         command === '!pc' ||
         command === '!config'
       ) {
-        return bot.say(
+        bot.say(
           target,
           `As configs estão no sobre do meu perfil ou no link: twitch.tv/iwillsuportu/about`,
         );
       }
       if (command === '!delay') {
-        return bot.say(target, 'Sem delay Kreygasm');
+        bot.say(target, 'Sem delay Kreygasm');
       }
       if (command === '!elo') {
-        return getInfoByNick(target);
+        getInfoByNick(target);
       }
     }
   });
@@ -211,7 +216,7 @@ function messageArrived(
 
 function getInOnTwitch(address: string, port: string | number) {
   bot.say(process.env.TARGET_CHANNEL_NAME, 'Entrei KappaPride');
-  return console.log(
+  console.log(
     `>> ${process.env.TARGET_CHANNEL_NAME} está online em ${address}:${port}`,
   );
 }
