@@ -11,12 +11,12 @@ import {
   differenceInMonths,
   differenceInDays,
 } from 'date-fns';
-
 import { AxiosResponse } from 'axios';
+
 import twitchApi from './services/twitchApi';
 import riotApi from './services/riotApi';
 
-import BotOptions from './config/bot';
+import { botOptions } from './config/bot';
 
 const commands = [
   '!elo',
@@ -31,7 +31,7 @@ const commands = [
   '!followage',
 ];
 
-const bot = new Client(BotOptions);
+const bot = new Client(botOptions);
 
 interface RankedLeagues {
   leagueId: string;
@@ -134,6 +134,7 @@ function messageArrived(
               const days =
                 differenceInDays(dateNowFormated, followed_atParsed) -
                 months * 30;
+
               bot.say(
                 target,
                 `@${from_name} Você segue @${to_name} há ${years} anos, ${months} meses e ${days} dias`,
@@ -221,8 +222,7 @@ function getInOnTwitch(address: string, port: string | number) {
   );
 }
 
-// Registra nossas funções
 bot.on('message', messageArrived);
 bot.on('connected', getInOnTwitch);
-// Conecta na Twitch:
+
 bot.connect();

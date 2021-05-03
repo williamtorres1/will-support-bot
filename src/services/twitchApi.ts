@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import axios from 'axios';
 
 const twitchApi = axios.create({

@@ -10,12 +10,11 @@
   "scripts": {
     "build": "babel src --extensions \".js,.ts\" --out-dir dist --copy-files --no-copy-ignored",
     "start": "node dist/server.js",
-    "dev:server": "ts-node-dev -r tsconfig-paths/register --respawn --inspect --transpile-only --ignore-watch node_modules src/server.ts",
-    "test": "jest"
+    "dev": "ts-node-dev -r tsconfig-paths/register --respawn --inspect --transpile-only --ignore-watch node_modules src/server.ts"  
   },
   "dependencies": {
     "axios": "^0.21.0",
-    "date-fns": "^2.16.1",
+    "date-fns": "2.21.1",
     "dotenv": "^8.2.0",
     "tmi.js": "^1.5.0"
   },
@@ -25,6 +24,7 @@
     "@babel/node": "^7.10.5",
     "@babel/preset-env": "^7.11.5",
     "@babel/preset-typescript": "^7.10.4",
+    "@types/node": "^15.0.1",
     "@types/tmi.js": "^1.4.2",
     "@typescript-eslint/eslint-plugin": "^4.2.0",
     "@typescript-eslint/parser": "^4.2.0",
@@ -35,9 +35,7 @@
     "eslint-import-resolver-typescript": "^2.3.0",
     "eslint-plugin-import": "^2.21.2",
     "eslint-plugin-prettier": "^3.1.4",
-    "jest": "^26.4.2",
     "prettier": "^2.1.2",
-    "ts-jest": "^26.4.0",
     "ts-node-dev": "^1.0.0-pre.63",
     "typescript": "^4.0.3"
   }
