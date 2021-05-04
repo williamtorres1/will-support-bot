@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const riotApi = axios.create({
-  baseURL: 'https://br1.api.riotgames.com/lol/',
+  baseURL: `https://${process.env.RIOT_SERVER}.api.riotgames.com/lol/`,
   headers: {
     'X-Riot-Token': process.env.RIOT_TOKEN,
   },

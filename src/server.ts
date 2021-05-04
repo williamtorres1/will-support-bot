@@ -116,6 +116,10 @@ function messageArrived(
           .get(`/users/follows?from_id=${user_id}&to_id=${to_id}`)
           .then(
             (response): AxiosResponse<Promise<[string] | void>> => {
+              if (response.data.data.length === 0) {
+                bot.say(target, `Você não segue o boy!`);
+                return;
+              }
               const { followed_at, from_name, to_name } = response.data
                 .data[0] as responseDateFollowAge;
               if (!followed_at) return;
@@ -149,6 +153,7 @@ function messageArrived(
           .then(response => {
             if (response.data.data.length === 0) {
               bot.say(target, `O/a streamer está offline`);
+              return;
             }
             const { started_at } = response.data.data[0];
             const dateNowFormated = parseISO(formatISO(Date.now()));
@@ -187,7 +192,7 @@ function messageArrived(
         );
       }
       if (command === '!idade') {
-        bot.say(target, 'Tenho 19 anos ainda SeemsGood');
+        bot.say(target, 'Tenho 20 anos ainda SeemsGood');
       }
       if (command === '!comandos') {
         bot.say(
