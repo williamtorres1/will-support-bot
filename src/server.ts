@@ -68,7 +68,6 @@ interface responseDateFollowAge {
 
 async function getInfoByNick(target: string): Promise<[string] | void> {
   try {
-    console.log('>> Fetching data on riot api');
     const { data: user } = await riotApi.get(
       `summoner/v4/summoners/by-name/${process.env.LOL_NICKNAME}`,
     );
@@ -76,10 +75,11 @@ async function getInfoByNick(target: string): Promise<[string] | void> {
       `league/v4/entries/by-summoner/${user.id}`,
     );
     if (rankedLeagues.length === 0) {
-      bot.say(target, 'Não terminou as MD10 ainda BibleThump');
+      return bot.say(target, 'Não terminou as MD10 ainda BibleThump');
     }
     let eloFlex = '';
     let eloSolo = '';
+
     rankedLeagues.forEach((rankedLeague: RankedLeagues) => {
       if (rankedLeague.queueType === 'RANKED_FLEX_SR') {
         eloFlex = `${rankedLeague.tier} ${rankedLeague.rank} (${rankedLeague.leaguePoints} PDL)`;
@@ -89,6 +89,21 @@ async function getInfoByNick(target: string): Promise<[string] | void> {
       eloSolo = `${rankedLeague.tier} ${rankedLeague.rank} (${rankedLeague.leaguePoints} PDL)`;
       return eloSolo;
     });
+
+    if (eloFlex === '' && eloSolo !== '') {
+      return bot.say(
+        target,
+        `──────────────────────────────── Solo/Duo ...... ${eloSolo}`,
+      );
+    }
+
+    if (eloFlex !== '' && eloSolo === '') {
+      return bot.say(
+        target,
+        `───────────────────────────────────────── Flex ...... ${eloFlex} `,
+      );
+    }
+
     return bot.say(
       target,
       `──────────────────────────────── Solo/Duo ...... ${eloSolo} ───────────────────────────────────────── Flex ...... ${eloFlex}`,
@@ -107,9 +122,12 @@ function messageArrived(
   if (me) {
     return;
   }
-  const commandName = message.trim();
+  const viewerMessage = message.trim();
+
+  if (!viewerMessage.startsWith('!')) return;
+
   commands.forEach(command => {
-    if (command === commandName) {
+    if (command === viewerMessage) {
       if (command === '!followage') {
         const { 'room-id': to_id, 'user-id': user_id } = context;
         twitchApi
@@ -120,9 +138,10 @@ function messageArrived(
                 bot.say(target, `Você não segue o boy!`);
                 return;
               }
+
               const { followed_at, from_name, to_name } = response.data
                 .data[0] as responseDateFollowAge;
-              if (!followed_at) return;
+
               const followed_atParsed = parseISO(followed_at);
               const dateNowFormated = parseISO(formatISO(Date.now()));
 
@@ -147,6 +166,7 @@ function messageArrived(
           )
           .catch(err => console.error(err));
       }
+
       if (command === '!uptime') {
         twitchApi
           .get(`/streams?user_login=${process.env.TARGET_CHANNEL_NAME}`)
@@ -175,31 +195,34 @@ function messageArrived(
               `@${process.env.TARGET_CHANNEL_NAME} está online há ${hours}h ${minutes}min ${seconds}s`,
             );
           })
-          .catch(err => {
-            console.error(err);
-          });
+          .catch(err => console.error(err));
       }
+
       if (command === '!github') {
         bot.say(
           target,
           'Me segue no GitHub pra ver muitos códigos fodas e talvez umas gambiarras github.com/williamtorres1',
         );
       }
+
       if (command === '!vod') {
         bot.say(
           target,
           'O vod vai ficar disponível por 14 dias assim que a live terminar.',
         );
       }
+
       if (command === '!idade') {
         bot.say(target, 'Tenho 20 anos ainda SeemsGood');
       }
+
       if (command === '!comandos') {
         bot.say(
           target,
           'Os comandos disponíveis são: !elo, !uptime, !github, !idade, !vod, !comandos, !configs, !followage',
         );
       }
+
       if (
         command === '!configs' ||
         command === '!pc' ||
@@ -210,9 +233,11 @@ function messageArrived(
           `As configs estão no sobre do meu perfil ou no link: twitch.tv/iwillsuportu/about`,
         );
       }
+
       if (command === '!delay') {
         bot.say(target, 'Sem delay Kreygasm');
       }
+
       if (command === '!elo') {
         getInfoByNick(target);
       }
