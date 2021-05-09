@@ -7,9 +7,8 @@
 
 ## Table of Contents
 - [Inspiration](#inspiration)
-- [Why?](#why?)
-- [Installing](#installing)
 - [Technologies](#techs)
+- [Installing](#installing)
 ### Inspiration
 
 When i started my live streams, i'm always thinking in add a bot to display my elo and some others message than you're already familiarize. But i don't like the way public bots works, so i built my own. 🤗
