@@ -1,22 +1,9 @@
-import 'dotenv/config';
-
 import { ChatUserstate, client as Client } from 'tmi.js';
-import {
-  formatISO,
-  parseISO,
-  differenceInHours,
-  differenceInMinutes,
-  differenceInSeconds,
-  differenceInYears,
-  differenceInMonths,
-  differenceInDays,
-} from 'date-fns';
-import { AxiosResponse } from 'axios';
-
-import twitchApi from './services/twitchApi';
 import riotApi from './services/riotApi';
 
 import { botOptions } from './config/bot';
+import { IRankedLeagues } from './interfaces';
+import { getFollowAge, getUptime } from './commands';
 
 const commands = [
   '!elo',
@@ -31,56 +18,37 @@ const commands = [
   '!followage',
 ];
 
-const bot = new Client(botOptions);
+let userId = '';
 
-interface RankedLeagues {
-  leagueId: string;
-  queueType: 'RANKED_FLEX_SR' | 'RANKED_SOLO_5X5';
-  tier:
-    | 'IRON'
-    | 'BRONZE'
-    | 'SILVER'
-    | 'GOLD'
-    | 'PLATINUM'
-    | 'DIAMOND'
-    | 'MASTER'
-    | 'GRANDMASTER'
-    | 'CHALLENGER';
-  rank: 'I' | 'II' | 'III' | 'IV';
-  leaguePoints: number;
-  wins: number;
-  loses: number;
-  veteran: boolean;
-  inactive: boolean;
-  freshBlood: boolean;
-  hotStreak: boolean;
+async function getRiotAccountId(): Promise<string> {
+  const { data: user } = await riotApi.get(
+    `summoner/v4/summoners/by-name/${process.env.LOL_NICKNAME}`,
+  );
+  return user.id;
 }
 
-interface responseDateFollowAge {
-  from_id: string;
-  from_login: string;
-  from_name: string;
-  to_id: string;
-  to_login: string;
-  to_name: string;
-  followed_at: string;
+async function getLeagueOfLegendsRankedInfo() {
+  const { data: rankedLeagues } = await riotApi.get(
+    `league/v4/entries/by-summoner/${userId}`,
+  );
+  return rankedLeagues;
 }
 
 async function getInfoByNick(target: string): Promise<[string] | void> {
   try {
-    const { data: user } = await riotApi.get(
-      `summoner/v4/summoners/by-name/${process.env.LOL_NICKNAME}`,
-    );
-    const { data: rankedLeagues } = await riotApi.get(
-      `league/v4/entries/by-summoner/${user.id}`,
-    );
+    if (userId === '') {
+      userId = await getRiotAccountId();
+    }
+
+    const rankedLeagues = await getLeagueOfLegendsRankedInfo();
+
     if (rankedLeagues.length === 0) {
       return bot.say(target, 'Não terminou as MD10 ainda BibleThump');
     }
     let eloFlex = '';
     let eloSolo = '';
 
-    rankedLeagues.forEach((rankedLeague: RankedLeagues) => {
+    rankedLeagues.forEach((rankedLeague: IRankedLeagues) => {
       if (rankedLeague.queueType === 'RANKED_FLEX_SR') {
         eloFlex = `${rankedLeague.tier} ${rankedLeague.rank} (${rankedLeague.leaguePoints} PDL)`;
         return eloFlex;
@@ -129,73 +97,11 @@ function messageArrived(
   commands.forEach(command => {
     if (command === viewerMessage) {
       if (command === '!followage') {
-        const { 'room-id': to_id, 'user-id': user_id } = context;
-        twitchApi
-          .get(`/users/follows?from_id=${user_id}&to_id=${to_id}`)
-          .then(
-            (response): AxiosResponse<Promise<[string] | void>> => {
-              if (response.data.data.length === 0) {
-                bot.say(target, `Você não segue o boy!`);
-                return;
-              }
-
-              const { followed_at, from_name, to_name } = response.data
-                .data[0] as responseDateFollowAge;
-
-              const followed_atParsed = parseISO(followed_at);
-              const dateNowFormated = parseISO(formatISO(Date.now()));
-
-              const years = differenceInYears(
-                dateNowFormated,
-                followed_atParsed,
-              );
-
-              const months =
-                differenceInMonths(dateNowFormated, followed_atParsed) -
-                years * 12;
-
-              const days =
-                differenceInDays(dateNowFormated, followed_atParsed) -
-                months * 30;
-
-              bot.say(
-                target,
-                `@${from_name} Você segue @${to_name} há ${years} anos, ${months} meses e ${days} dias`,
-              );
-            },
-          )
-          .catch(err => console.error(err));
+        getFollowAge(target, context);
       }
 
       if (command === '!uptime') {
-        twitchApi
-          .get(`/streams?user_login=${process.env.TARGET_CHANNEL_NAME}`)
-          .then(response => {
-            if (response.data.data.length === 0) {
-              bot.say(target, `O/a streamer está offline`);
-              return;
-            }
-            const { started_at } = response.data.data[0];
-            const dateNowFormated = parseISO(formatISO(Date.now()));
-            const parsedDateStartedAt = parseISO(started_at);
-            const hours = differenceInHours(
-              dateNowFormated,
-              parsedDateStartedAt,
-            );
-            const minutes =
-              differenceInMinutes(dateNowFormated, parsedDateStartedAt) -
-              hours * 60;
-            const seconds =
-              differenceInSeconds(dateNowFormated, parsedDateStartedAt) -
-              hours * 3600 -
-              minutes * 60;
-
-            bot.say(
-              target,
-              `@${process.env.TARGET_CHANNEL_NAME} está online há ${hours}h ${minutes}min ${seconds}s`,
-            );
-          })
-          .catch(err => console.error(err));
+        getUptime(target);
       }
 
       if (command === '!github') {
@@ -245,14 +151,14 @@ function messageArrived(
   });
 }
 
-function getInOnTwitch(address: string, port: string | number) {
+function connectOnTwitch(address: string, port: string | number) {
   bot.say(process.env.TARGET_CHANNEL_NAME, 'Entrei KappaPride');
   console.log(
     `>> ${process.env.TARGET_CHANNEL_NAME} está online em ${address}:${port}`,
   );
 }
 
-bot.on('message', messageArrived);
-bot.on('connected', getInOnTwitch);
+export const bot = new Client(botOptions);
 
-bot.connect();
+bot.on('message', messageArrived);
+bot.on('connected', connectOnTwitch);
