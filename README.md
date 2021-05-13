@@ -15,12 +15,12 @@ When i started my live streams, i'm always thinking in add a bot to display my e
 
 ### Techs
 
-- [Node.JS](nodejs.org)
-- [Riot Games Developer](developer.riotgames.com/)
+- [Node.JS](https://nodejs.org)
+- [Riot Games Developer](https://developer.riotgames.com/)
 - [Tmi.js](https://tmijs.com)
-- [TypeScript](www.typescriptlang.org)
-- [Insomnia](insomnia.rest)
-- [Ts-Node-Dev](github.com/wclr/ts-node-dev)
+- [TypeScript](https://www.typescriptlang.org)
+- [Insomnia](https://insomnia.rest)
+- [Ts-Node-Dev](https://github.com/wclr/ts-node-dev)
 
 ### Installing
 
@@ -37,16 +37,16 @@ $ yarn
 # Run
 $ yarn dev
 
-# The bot will run on port 3333 - <http://localhost:3333>
+# The bot will run on port 443 - <irc-ws.chat.twitch.tv:443>
 
 ```
 
 You'll need some things to run this project:
 
 1. A Twitch account
-1. Register a new application on [twitch developer](dev.twitch.tv/console/apps/create)
+1. Register a new application on [twitch developer](https://dev.twitch.tv/console/apps/create)
 1. A Riot Games account
-1. A development [api key](developer.riotgames.com)
+1. A development [api key](https://developer.riotgames.com)
 
 Create a `.env` file and copy the content on `.env.example`, replacing with the informations you got and want.
 
